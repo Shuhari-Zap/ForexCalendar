@@ -3,8 +3,11 @@ The economic calendar of Foreign Exchange from forexfactory.com, metalsmine.com 
 
 Usage:
 1- Set up Selenium with a driver of your choice (default=Chrome 87 (beta))
+
 2- Change the dates as you please at the end of the code.
+
 3- Run this using the command "python `script_name`.py
+
 4- Output has been changed to be written into CSV made with source name (iteration over all three sources)
 
 
