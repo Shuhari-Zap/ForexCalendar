@@ -3,7 +3,7 @@ The economic calendar of Foreign Exchange from forexfactory.com, metalsmine.com 
 
 Usage:
 
-1- Set up Selenium with a driver of your choice (default=Chrome 87 (beta))
+1- Set up Selenium with a driver of your choice (default=Chrome 87 (beta)). This was added as the source sites' CloudFlare setup requires a an actual browser session. (workarounds with requests.Session() as well as CfScrape (https://pypi.org/project/cfscrape/) have not worked out.
 
 2- Change the dates as you please at the end of the code.
 
