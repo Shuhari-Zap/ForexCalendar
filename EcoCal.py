@@ -1,9 +1,29 @@
+# FORK: https://github.com/swishderzy/ForexCalendar
+
+# https://www.forexfactory.com/calendar.php?week=jan1.2007
+# https://www.metalsmine.com/calendar.php?week=jan1.2007
+# https://www.energyexch.com/calendar.php?week=jan1.2007
+
+from selenium import webdriver
+
 from bs4 import BeautifulSoup
 import requests
 import datetime
 import logging
 import csv
 import re
+
+
+FIELDS = ["date", "time", "currency", "impact", "event", "actual", "forecast", "previous"]
+BASE_URLS = ["https://www.forexfactory.com/", "https://www.metalsmine.com/", "https://www.energyexch.com/"]
+
+
+def makeHeaderLine(fields):
+    header_line = ""
+    for field in fields:
+        header_line = header_line + field + ","
+    print(header_line[:-1])
+
 
 def setLogger():
     logging.basicConfig(level=logging.INFO,
@@ -15,30 +35,31 @@ def setLogger():
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
 
-def getEconomicCalendar(startlink,endlink):
 
+def getEconomicCalendar(base_url, fields, startlink, endlink):
     # write to console current status
-    logging.info("Scraping data for link: {}".format(startlink))
-
-    # get the page and make the soup
-    baseURL = "https://www.forexfactory.com/"
-    r = requests.get(baseURL + startlink)
-    data = r.text
-    soup = BeautifulSoup(data, "lxml")
-
+    logging.info("Scraping data for link: {}".format(startlink))    
+    # run webdriver Chrome
+    driver = webdriver.Chrome('./chromedriver')  # Optional argument, if not specified will search path.
+    driver.implicitly_wait(30)
+    driver.get(base_url + startlink)
+    # make "Soup" from driver
+    soup = BeautifulSoup(driver.page_source, "lxml")
     # get and parse table data, ignoring details and graph
     table = soup.find("table", class_="calendar__table")
 
+    # From original repository:
     # do not use the ".calendar__row--grey" css selector (reserved for historical data)
-    trs = table.select("tr.calendar__row.calendar_row")
-    fields = ["date","time","currency","impact","event","actual","forecast","previous"]
+    # trs = table.select("tr.calendar__row.calendar_row")
 
+    # As we're fetching a lot of past data, calendar__row--grey is now included
+    trs = table.select("tr.calendar__row.calendar__row--grey")
+    
     # some rows do not have a date (cells merged)
     curr_year = startlink[-4:]
     curr_date = ""
     curr_time = ""
     for tr in trs:
-
         # fields may mess up sometimes, see Tue Sep 25 2:45AM French Consumer Spending
         # in that case we append to errors.csv the date time where the error is
         try:
@@ -77,7 +98,8 @@ def getEconomicCalendar(startlink,endlink):
 
             dt = datetime.datetime.strptime(",".join([curr_year,curr_date,curr_time]),
                                             "%Y,%a%b %d,%I:%M%p")
-            print(",".join([str(dt),currency,impact,event,actual,forecast,previous, state]))
+            with open(f"{base_url.split('.')[1]}.csv", "a", newline="\n") as f:
+                csv.writer(f).writerow([str(dt), currency, impact, event, actual, forecast, previous, state])
         except:
             with open("errors.csv","a") as f:
                 csv.writer(f).writerow([curr_year,curr_date,curr_time])
@@ -90,11 +112,14 @@ def getEconomicCalendar(startlink,endlink):
     # get the link for the next week and follow
     follow = soup.select("a.calendar__pagination.calendar__pagination--next.next")
     follow = follow[0]["href"]
-    getEconomicCalendar(follow,endlink)
+    driver.close()
+    getEconomicCalendar(base_url, FIELDS, follow, endlink)
 
 if __name__ == "__main__":
     """
     Run this using the command "python `script_name`.py >> `output_name`.csv"
     """
     setLogger()
-getEconomicCalendar("calendar.php?week=jan7.2007","calendar.php?week=sep23.2018")
+makeHeaderLine(FIELDS)
+for base_url in BASE_URLS:
+    getEconomicCalendar(base_url, FIELDS,"calendar.php?week=jan1.2007","calendar.php?week=nov02.2020")
