@@ -2,6 +2,7 @@
 The economic calendar of Foreign Exchange from forexfactory.com, metalsmine.com and energyexch.com with the state of the actual value compared to the forecasted ("better" or "worse").
 
 Usage:
+
 1- Set up Selenium with a driver of your choice (default=Chrome 87 (beta))
 
 2- Change the dates as you please at the end of the code.
